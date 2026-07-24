@@ -1,14 +1,18 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = 'hamro_super_secret_key_123';
-const DB_FILE = path.join(__dirname, 'database.sqlite');
+const JWT_SECRET = process.env.JWT_SECRET || 'hamro_super_secret_key_123';
+
+// Postgres Connection Pool (Vercel provides POSTGRES_URL)
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL || 'postgresql://postgres:postgres@localhost:5432/hamro',
+  ssl: process.env.POSTGRES_URL ? { rejectUnauthorized: false } : undefined
+});
 
 // Middleware
 app.use(cors());
@@ -16,26 +20,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
-// Initialize SQLite Database
-const db = new sqlite3.Database(DB_FILE, (err) => {
-  if (err) {
-    console.error('Error opening database:', err.message);
-  } else {
-    console.log('Connected to local SQLite database.');
-    createTablesAndSeed();
-  }
-});
-
-function createTablesAndSeed() {
-  db.serialize(() => {
+async function createTablesAndSeed() {
+  try {
     // Create Products Table
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS products (
-        id INTEGER PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         category TEXT NOT NULL,
-        price REAL NOT NULL,
-        rating REAL DEFAULT 5.0,
+        price NUMERIC NOT NULL,
+        rating NUMERIC DEFAULT 5.0,
         reviews INTEGER DEFAULT 0,
         image TEXT,
         description TEXT,
@@ -45,25 +39,25 @@ function createTablesAndSeed() {
     `);
 
     // Create Orders Table
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS orders (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         customer_name TEXT NOT NULL,
         customer_email TEXT NOT NULL,
         address TEXT NOT NULL,
         city TEXT NOT NULL,
         zip TEXT NOT NULL,
-        total REAL NOT NULL,
+        total NUMERIC NOT NULL,
         items TEXT NOT NULL,
         status TEXT DEFAULT 'Pending',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
     // Create Users Table
-    db.run(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
@@ -72,184 +66,126 @@ function createTablesAndSeed() {
     `);
 
     // Seed default admin user
-    db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
-      if (err) return;
-      if (row.count === 0) {
-        bcrypt.hash('password123', 10, (err, hash) => {
-          if (!err) {
-            db.run("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)", ['Admin', 'admin@hamro.com', hash, 'admin']);
-            console.log('Default admin created: admin@hamro.com / password123');
-          }
-        });
-      }
-    });
+    const userRes = await pool.query("SELECT COUNT(*) as count FROM users");
+    if (parseInt(userRes.rows[0].count) === 0) {
+      const hash = await bcrypt.hash('password123', 10);
+      await pool.query("INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)", ['Admin', 'admin@hamro.com', hash, 'admin']);
+      console.log('Default admin created: admin@hamro.com / password123');
+    }
 
     // Check if seeding is needed
-    db.get("SELECT COUNT(*) as count FROM products", (err, row) => {
-      if (err) {
-        console.error('Error checking products count:', err.message);
-        return;
-      }
-      
-      if (row.count === 0) {
-        console.log('Seeding initial products data...');
-        const initialProducts = [
-          {
-            id: 1,
-            name: "Himalayan Golden Needle Tea",
-            category: "Tea & Coffee",
-            price: 18.99,
-            rating: 4.9,
-            reviews: 124,
-            image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=800&q=80",
-            description: "Hand-plucked from the high-altitude gardens of Ilam, Nepal. This rare golden-tipped black tea offers a smooth, sweet flavor profile with subtle notes of honey and roasted malt.",
-            tag: "Best Seller",
-            specs: JSON.stringify({
-              origin: "Ilam, Nepal (Altitude: 6,000 ft)",
-              weight: "100g (Approx. 40 cups)",
-              ingredients: "100% Organic Black Tea",
-              caffeine: "Medium"
-            })
-          },
-          {
-            id: 2,
-            name: "Everest Highland Organic Coffee",
-            category: "Tea & Coffee",
-            price: 24.50,
-            rating: 4.8,
-            reviews: 98,
-            image: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=80",
-            description: "Grown in the foothills of the Himalayas, this single-origin Arabica coffee is shade-grown and wet-processed. It features a full body with notes of dark chocolate and orange zest peel.",
-            tag: "Organic",
-            specs: JSON.stringify({
-              origin: "Nuwakot, Nepal (Altitude: 4,500 ft)",
-              weight: "250g (Whole Beans)",
-              roast: "Medium-Dark",
-              profile: "Low acidity, chocolaty finish"
-            })
-          },
-          {
-            id: 3,
-            name: "Wild Himalayan Cliff Honey",
-            category: "Gourmet",
-            price: 34.99,
-            rating: 5.0,
-            reviews: 215,
-            image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=800&q=80",
-            description: "Sourced from the cliffs of Central Nepal, harvested by traditional Gurung honey hunters. This wild multi-floral honey has a rich amber color and contains unique botanical compounds.",
-            tag: "Rare Find",
-            specs: JSON.stringify({
-              origin: "Kaski Cliffs, Nepal",
-              weight: "200g",
-              type: "Raw, Unpasteurized",
-              harvest: "Spring Season"
-            })
-          },
-          {
-            id: 4,
-            name: "Coarse Himalayan Pink Salt Rocks",
-            category: "Gourmet",
-            price: 8.99,
-            rating: 4.7,
-            reviews: 84,
-            image: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=800&q=80",
-            description: "Pure rock salt containing 84 essential minerals. Sourced directly from Himalayan foothills, perfect for grinders, gourmet cooking, and salt blocks.",
-            tag: "Essential",
-            specs: JSON.stringify({
-              origin: "Himalayan Region",
-              weight: "500g",
-              processing: "Hand-mined, washed",
-              additives: "None (100% natural)"
-            })
-          },
-          {
-            id: 5,
-            name: "Handwoven Pashmina Cashmere Shawl",
-            category: "Artisanal",
-            price: 110.00,
-            rating: 4.9,
-            reviews: 62,
-            image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=800&q=80",
-            description: "Spun from the soft undercoat of Himalayan Chyangra mountain goats, hand-loomed in Kathmandu. Incredibly soft, featherlight, yet warm enough for cold climates.",
-            tag: "Premium",
-            specs: JSON.stringify({
-              origin: "Kathmandu Valley",
-              material: "70% Pashmina, 30% Silk blend",
-              dimensions: "200cm x 70cm",
-              care: "Dry clean only"
-            })
-          },
-          {
-            id: 6,
-            name: "Tibetan Brass Meditation Singing Bowl",
-            category: "Artisanal",
-            price: 49.99,
-            rating: 4.8,
-            reviews: 147,
-            image: "https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?auto=format&fit=crop&w=800&q=80",
-            description: "Hand-hammered brass singing bowl designed for meditation, yoga, and sound healing therapy. Includes a wooden striker mallet and hand-sewn ring cushion.",
-            tag: "Best Seller",
-            specs: JSON.stringify({
-              origin: "Patan Craft Colony",
-              diameter: "12cm",
-              weight: "450g",
-              frequency: "Heart Chakra (F Note)"
-            })
-          },
-          {
-            id: 7,
-            name: "Organic Himalayan Cardamom Pods",
-            category: "Gourmet",
-            price: 12.99,
-            rating: 4.6,
-            reviews: 53,
-            image: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80",
-            description: "High-grade large black cardamom, smoky and intensely aromatic. A staple spice grown in eastern hills of Nepal, dried over traditional wood-fired ovens.",
-            tag: "Spices",
-            specs: JSON.stringify({
-              origin: "Taplejung, Nepal",
-              weight: "80g",
-              packaging: "Resealable eco-bag",
-              drying: "Wood fire smoked"
-            })
-          },
-          {
-            id: 8,
-            name: "Artisanal Wool Felt Coaster Set",
-            category: "Artisanal",
-            price: 15.99,
-            rating: 4.7,
-            reviews: 79,
-            image: "https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&w=800&q=80",
-            description: "A colorful set of 4 round coasters made from 100% pure New Zealand wool, hand-felted by women artisans in Nepal. Naturally water-resistant and heat insulating.",
-            tag: "Artisan Co-Op",
-            specs: JSON.stringify({
-              origin: "Lalitpur Women Group",
-              material: "100% Organic Wool",
-              quantity: "Set of 4 pieces",
-              diameter: "10cm"
-            })
-          }
-        ];
+    const prodRes = await pool.query("SELECT COUNT(*) as count FROM products");
+    if (parseInt(prodRes.rows[0].count) === 0) {
+      console.log('Seeding initial products data...');
+      const initialProducts = [
+        {
+          name: "Himalayan Golden Needle Tea",
+          category: "Tea & Coffee",
+          price: 18.99,
+          rating: 4.9,
+          reviews: 124,
+          image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=800&q=80",
+          description: "Hand-plucked from the high-altitude gardens of Ilam, Nepal. This rare golden-tipped black tea offers a smooth, sweet flavor profile with subtle notes of honey and roasted malt.",
+          tag: "Best Seller",
+          specs: JSON.stringify({ origin: "Ilam, Nepal (Altitude: 6,000 ft)", weight: "100g (Approx. 40 cups)", ingredients: "100% Organic Black Tea", caffeine: "Medium" })
+        },
+        {
+          name: "Everest Highland Organic Coffee",
+          category: "Tea & Coffee",
+          price: 24.50,
+          rating: 4.8,
+          reviews: 98,
+          image: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=80",
+          description: "Grown in the foothills of the Himalayas, this single-origin Arabica coffee is shade-grown and wet-processed. It features a full body with notes of dark chocolate and orange zest peel.",
+          tag: "Organic",
+          specs: JSON.stringify({ origin: "Nuwakot, Nepal (Altitude: 4,500 ft)", weight: "250g (Whole Beans)", roast: "Medium-Dark", profile: "Low acidity, chocolaty finish" })
+        },
+        {
+          name: "Wild Himalayan Cliff Honey",
+          category: "Gourmet",
+          price: 34.99,
+          rating: 5.0,
+          reviews: 215,
+          image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=800&q=80",
+          description: "Sourced from the cliffs of Central Nepal, harvested by traditional Gurung honey hunters. This wild multi-floral honey has a rich amber color and contains unique botanical compounds.",
+          tag: "Rare Find",
+          specs: JSON.stringify({ origin: "Kaski Cliffs, Nepal", weight: "200g", type: "Raw, Unpasteurized", harvest: "Spring Season" })
+        },
+        {
+          name: "Coarse Himalayan Pink Salt Rocks",
+          category: "Gourmet",
+          price: 8.99,
+          rating: 4.7,
+          reviews: 84,
+          image: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=800&q=80",
+          description: "Pure rock salt containing 84 essential minerals. Sourced directly from Himalayan foothills, perfect for grinders, gourmet cooking, and salt blocks.",
+          tag: "Essential",
+          specs: JSON.stringify({ origin: "Himalayan Region", weight: "500g", processing: "Hand-mined, washed", additives: "None (100% natural)" })
+        },
+        {
+          name: "Handwoven Pashmina Cashmere Shawl",
+          category: "Artisanal",
+          price: 110.00,
+          rating: 4.9,
+          reviews: 62,
+          image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=800&q=80",
+          description: "Spun from the soft undercoat of Himalayan Chyangra mountain goats, hand-loomed in Kathmandu. Incredibly soft, featherlight, yet warm enough for cold climates.",
+          tag: "Premium",
+          specs: JSON.stringify({ origin: "Kathmandu Valley", material: "70% Pashmina, 30% Silk blend", dimensions: "200cm x 70cm", care: "Dry clean only" })
+        },
+        {
+          name: "Tibetan Brass Meditation Singing Bowl",
+          category: "Artisanal",
+          price: 49.99,
+          rating: 4.8,
+          reviews: 147,
+          image: "https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?auto=format&fit=crop&w=800&q=80",
+          description: "Hand-hammered brass singing bowl designed for meditation, yoga, and sound healing therapy. Includes a wooden striker mallet and hand-sewn ring cushion.",
+          tag: "Best Seller",
+          specs: JSON.stringify({ origin: "Patan Craft Colony", diameter: "12cm", weight: "450g", frequency: "Heart Chakra (F Note)" })
+        },
+        {
+          name: "Organic Himalayan Cardamom Pods",
+          category: "Gourmet",
+          price: 12.99,
+          rating: 4.6,
+          reviews: 53,
+          image: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80",
+          description: "High-grade large black cardamom, smoky and intensely aromatic. A staple spice grown in eastern hills of Nepal, dried over traditional wood-fired ovens.",
+          tag: "Spices",
+          specs: JSON.stringify({ origin: "Taplejung, Nepal", weight: "80g", packaging: "Resealable eco-bag", drying: "Wood fire smoked" })
+        },
+        {
+          name: "Artisanal Wool Felt Coaster Set",
+          category: "Artisanal",
+          price: 15.99,
+          rating: 4.7,
+          reviews: 79,
+          image: "https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&w=800&q=80",
+          description: "A colorful set of 4 round coasters made from 100% pure New Zealand wool, hand-felted by women artisans in Nepal. Naturally water-resistant and heat insulating.",
+          tag: "Artisan Co-Op",
+          specs: JSON.stringify({ origin: "Lalitpur Women Group", material: "100% Organic Wool", quantity: "Set of 4 pieces", diameter: "10cm" })
+        }
+      ];
 
-        const stmt = db.prepare(`
-          INSERT INTO products (id, name, category, price, rating, reviews, image, description, tag, specs)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-
-        initialProducts.forEach(prod => {
-          stmt.run(prod.id, prod.name, prod.category, prod.price, prod.rating, prod.reviews, prod.image, prod.description, prod.tag, prod.specs);
-        });
-        stmt.finalize();
-        console.log('Database seeded successfully.');
+      const query = `
+        INSERT INTO products (name, category, price, rating, reviews, image, description, tag, specs)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `;
+      for (const prod of initialProducts) {
+        await pool.query(query, [prod.name, prod.category, prod.price, prod.rating, prod.reviews, prod.image, prod.description, prod.tag, prod.specs]);
       }
-    });
-  });
+      console.log('Database seeded successfully.');
+    }
+  } catch (err) {
+    console.error('Error initializing database:', err);
+  }
 }
 
-// REST API Endpoints
+// Ensure tables exist on boot
+createTablesAndSeed();
 
-// Authentication Middleware
+// Auth Middleware
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -270,170 +206,152 @@ function isAdmin(req, res, next) {
   }
 }
 
-// --- Auth Routes ---
-app.post('/api/auth/register', (req, res) => {
+// REST APIs
+app.post('/api/auth/register', async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'All fields required' });
 
-  bcrypt.hash(password, 10, (err, hash) => {
-    if (err) return res.status(500).json({ error: 'Server error' });
-    
-    db.run("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", [name, email, hash], function(err) {
-      if (err) return res.status(400).json({ error: 'Email already exists' });
-      
-      const token = jwt.sign({ id: this.lastID, name, email, role: 'customer' }, JWT_SECRET);
-      res.json({ message: 'User registered', token, user: { name, email, role: 'customer' } });
-    });
-  });
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    const result = await pool.query("INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, 'customer') RETURNING id", [name, email, hash]);
+    const user = { id: result.rows[0].id, name, email, role: 'customer' };
+    const token = jwt.sign(user, JWT_SECRET);
+    res.json({ message: 'User registered', token, user });
+  } catch (err) {
+    res.status(400).json({ error: 'Email already exists' });
+  }
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  db.get("SELECT * FROM users WHERE email = ?", [email], (err, user) => {
-    if (err || !user) return res.status(401).json({ error: 'Invalid credentials' });
+  try {
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
     
-    bcrypt.compare(password, user.password, (err, isMatch) => {
-      if (err || !isMatch) return res.status(401).json({ error: 'Invalid credentials' });
-      
-      const token = jwt.sign({ id: user.id, name: user.name, email: user.email, role: user.role }, JWT_SECRET);
-      res.json({ message: 'Logged in', token, user: { name: user.name, email: user.email, role: user.role } });
-    });
-  });
+    const user = result.rows[0];
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+    
+    const safeUser = { id: user.id, name: user.name, email: user.email, role: user.role };
+    const token = jwt.sign(safeUser, JWT_SECRET);
+    res.json({ message: 'Logged in', token, user: safeUser });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
-// 1. Get all products
-app.get('/api/products', (req, res) => {
-  db.all("SELECT * FROM products", [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    // Parse specs string back to JSON object
-    const formatted = rows.map(row => ({
+app.get('/api/products', async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM products");
+    const formatted = result.rows.map(row => ({
       ...row,
       specs: row.specs ? JSON.parse(row.specs) : {}
     }));
     res.json(formatted);
-  });
-});
-
-// 2. Add a new product (Bulk / Single additions supported)
-app.post('/api/products', authenticateToken, isAdmin, (req, res) => {
-  const { id, name, category, price, rating, reviews, image, description, tag, specs } = req.body;
-  if (!name || !category || !price) {
-    return res.status(400).json({ error: 'Name, Category, and Price are required fields.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  // Generate ID if not provided
-  const queryId = id || Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
-  const specsStr = specs ? (typeof specs === 'string' ? specs : JSON.stringify(specs)) : '{}';
-
-  const stmt = db.prepare(`
-    INSERT INTO products (id, name, category, price, rating, reviews, image, description, tag, specs)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  stmt.run(queryId, name, category, parseFloat(price), parseFloat(rating || 5.0), parseInt(reviews || 0), image, description, tag, specsStr, function(err) {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.status(201).json({ message: 'Product added successfully.', productId: queryId });
-  });
-  stmt.finalize();
 });
 
-// 3. Edit a product
-app.put('/api/products/:id', authenticateToken, isAdmin, (req, res) => {
-  const productId = parseInt(req.params.id);
+app.post('/api/products', authenticateToken, isAdmin, async (req, res) => {
+  const { name, category, price, rating, reviews, image, description, tag, specs } = req.body;
+  if (!name || !category || !price) return res.status(400).json({ error: 'Required fields missing' });
+  
+  const specsStr = specs ? (typeof specs === 'string' ? specs : JSON.stringify(specs)) : '{}';
+  
+  try {
+    const result = await pool.query(`
+      INSERT INTO products (name, category, price, rating, reviews, image, description, tag, specs)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id
+    `, [name, category, price, rating || 5.0, reviews || 0, image, description, tag, specsStr]);
+    res.status(201).json({ message: 'Product added', productId: result.rows[0].id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/products/:id', authenticateToken, isAdmin, async (req, res) => {
+  const productId = req.params.id;
   const { name, category, price, rating, reviews, image, description, tag, specs } = req.body;
 
-  db.get("SELECT * FROM products WHERE id = ?", [productId], (err, row) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    if (!row) {
-      return res.status(404).json({ error: 'Product not found.' });
-    }
-
+  try {
+    const prodRes = await pool.query("SELECT * FROM products WHERE id = $1", [productId]);
+    if (prodRes.rows.length === 0) return res.status(404).json({ error: 'Product not found' });
+    
+    const row = prodRes.rows[0];
     const updatedName = name || row.name;
     const updatedCategory = category || row.category;
-    const updatedPrice = price !== undefined ? parseFloat(price) : row.price;
-    const updatedRating = rating !== undefined ? parseFloat(rating) : row.rating;
-    const updatedReviews = reviews !== undefined ? parseInt(reviews) : row.reviews;
+    const updatedPrice = price !== undefined ? price : row.price;
+    const updatedRating = rating !== undefined ? rating : row.rating;
+    const updatedReviews = reviews !== undefined ? reviews : row.reviews;
     const updatedImage = image !== undefined ? image : row.image;
     const updatedDescription = description !== undefined ? description : row.description;
     const updatedTag = tag !== undefined ? tag : row.tag;
     const updatedSpecs = specs ? (typeof specs === 'string' ? specs : JSON.stringify(specs)) : row.specs;
 
-    db.run(`
+    await pool.query(`
       UPDATE products
-      SET name = ?, category = ?, price = ?, rating = ?, reviews = ?, image = ?, description = ?, tag = ?, specs = ?
-      WHERE id = ?
-    `, [updatedName, updatedCategory, updatedPrice, updatedRating, updatedReviews, updatedImage, updatedDescription, updatedTag, updatedSpecs, productId], function(err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ message: 'Product updated successfully.' });
-    });
-  });
+      SET name = $1, category = $2, price = $3, rating = $4, reviews = $5, image = $6, description = $7, tag = $8, specs = $9
+      WHERE id = $10
+    `, [updatedName, updatedCategory, updatedPrice, updatedRating, updatedReviews, updatedImage, updatedDescription, updatedTag, updatedSpecs, productId]);
+    
+    res.json({ message: 'Product updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// 4. Delete a product (Add/remove bulk helper)
-app.delete('/api/products/:id', authenticateToken, isAdmin, (req, res) => {
-  const productId = parseInt(req.params.id);
-  db.run("DELETE FROM products WHERE id = ?", [productId], function(err) {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    if (this.changes === 0) {
-      return res.status(404).json({ error: 'Product not found.' });
-    }
-    res.json({ message: 'Product deleted successfully.' });
-  });
+app.delete('/api/products/:id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query("DELETE FROM products WHERE id = $1", [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Product not found' });
+    res.json({ message: 'Product deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// 5. Submit a new order
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', async (req, res) => {
   const { customer_name, customer_email, address, city, zip, total, items } = req.body;
   if (!customer_name || !customer_email || !address || !items || !total) {
-    return res.status(400).json({ error: 'Required order information is missing.' });
+    return res.status(400).json({ error: 'Missing order info' });
   }
-
   const itemsStr = typeof items === 'string' ? items : JSON.stringify(items);
-
-  const stmt = db.prepare(`
-    INSERT INTO orders (customer_name, customer_email, address, city, zip, total, items)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  stmt.run(customer_name, customer_email, address, city, zip, parseFloat(total), itemsStr, function(err) {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.status(201).json({ message: 'Order submitted successfully.', orderId: this.lastID });
-  });
-  stmt.finalize();
+  
+  try {
+    const result = await pool.query(`
+      INSERT INTO orders (customer_name, customer_email, address, city, zip, total, items)
+      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
+    `, [customer_name, customer_email, address, city, zip, total, itemsStr]);
+    res.status(201).json({ message: 'Order submitted', orderId: result.rows[0].id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// 6. Get all orders
-app.get('/api/orders', authenticateToken, isAdmin, (req, res) => {
-  db.all("SELECT * FROM orders ORDER BY created_at DESC", [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    const formatted = rows.map(row => ({
+app.get('/api/orders', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM orders ORDER BY created_at DESC");
+    const formatted = result.rows.map(row => ({
       ...row,
       items: JSON.parse(row.items)
     }));
     res.json(formatted);
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Fallback to index.html for frontend routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-});
+// Vercel Serverless Export or Local Listen
+if (process.env.VERCEL) {
+  module.exports = app;
+} else {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server is running at http://localhost:${PORT}`);
+  });
+}
