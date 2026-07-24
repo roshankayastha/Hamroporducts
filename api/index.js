@@ -347,9 +347,9 @@ app.get('*', (req, res) => {
 });
 
 // Vercel Serverless Export or Local Listen
-if (process.env.VERCEL) {
-  module.exports = app;
-} else {
+module.exports = app;
+
+if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);
