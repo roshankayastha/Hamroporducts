@@ -8,17 +8,19 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'hamro_super_secret_key_123';
 
-// Postgres Connection Pool (Vercel provides POSTGRES_URL)
+// Postgres Connection Pool (Vercel may use different env var names)
+const connectionString = process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING || process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/hamro';
+const isProduction = !!(process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING || process.env.DATABASE_URL);
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || 'postgresql://postgres:postgres@localhost:5432/hamro',
-  ssl: process.env.POSTGRES_URL ? { rejectUnauthorized: false } : undefined
+  connectionString,
+  ssl: isProduction ? { rejectUnauthorized: false } : undefined
 });
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '../')));
+app.use(express.static(path.join(__dirname, '../public')));
 
 async function createTablesAndSeed() {
   try {
@@ -342,9 +344,8 @@ app.get('/api/orders', authenticateToken, isAdmin, async (req, res) => {
   }
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../index.html'));
-});
+// In production (Vercel), static files are served from public/ automatically.
+// In local dev, Express serves them via express.static above.
 
 // Vercel Serverless Export or Local Listen
 module.exports = app;
