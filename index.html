@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hamro Products | Authentic Himalayan E-Commerce</title>
+  <meta name="description" content="Discover premium organic teas, rare cliff honey, single-origin coffees, and hand-woven pashmina crafts sourced directly from local farmers in the Himalayas.">
+  
+  <!-- Remix Icons CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Favicon Icon -->
+  <link rel="icon" type="image/jpeg" href="assets/favicon.jpg">
+</head>
+<body>
+
+  <!-- Premium Header & Navigation -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="logo-area" id="nav-logo">
+        <img src="assets/logo.jpg" alt="Hamro Products Logo" class="logo-img">
+        <span class="logo-text">Hamro Products</span>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="#" id="link-home">Home</a></li>
+          <li><a href="#shop" id="link-shop">Shop</a></li>
+          <li><a href="#about" id="link-about">Our Story</a></li>
+          <li><a href="#features" id="link-values">Values</a></li>
+        </ul>
+      </nav>
+
+      <!-- Navigation Actions -->
+      <div class="nav-actions">
+        <!-- Search Box -->
+        <div class="search-box">
+          <i class="ri-search-line search-icon"></i>
+          <input type="text" id="search-input" class="search-input" placeholder="Search treasures..." aria-label="Search products">
+        </div>
+
+        <!-- Light/Dark Mode Toggle -->
+        <button id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode">
+          <i class="ri-moon-line"></i>
+        </button>
+
+        <!-- User Account Icon -->
+        <button id="user-btn" class="icon-btn" aria-label="User Account" onclick="toggleAuthModal()">
+          <i class="ri-user-line" id="user-icon-state"></i>
+        </button>
+
+        <!-- Shopping Cart Icon Button -->
+        <button id="cart-btn" class="icon-btn" aria-label="Open shopping cart">
+          <i class="ri-shopping-bag-line"></i>
+          <span class="cart-badge" id="cart-badge">0</span>
+        </button>
+
+        <!-- Mobile Menu Toggle Button -->
+        <button id="mobile-menu-btn" class="icon-btn mobile-menu-btn" aria-label="Toggle menu">
+          <i class="ri-menu-line"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Banner Slider Section -->
+    <section class="hero-banner-container">
+      <div class="slider-wrapper">
+        <div class="slider-slides" id="hero-slider-slides">
+          <div class="slider-slide">
+            <a href="#shop" class="hero-banner-link" aria-label="Shop wholesale collections">
+              <img src="assets/hero-banner.jpg" alt="Hamro Products - हाम्रो उत्पादन, तपाईंको सफलता" class="hero-banner-img">
+            </a>
+          </div>
+          <div class="slider-slide">
+            <a href="#shop" class="hero-banner-link" aria-label="Shop retail brands">
+              <img src="assets/hero-banner-2.jpg" alt="Hamro Products - हाम्रो सामान, तपाईंको विश्वास" class="hero-banner-img">
+            </a>
+          </div>
+        </div>
+        
+        <!-- Navigation Buttons -->
+        <button class="slider-btn prev-btn" id="slider-prev-btn" aria-label="Previous slide">
+          <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <button class="slider-btn next-btn" id="slider-next-btn" aria-label="Next slide">
+          <i class="ri-arrow-right-s-line"></i>
+        </button>
+
+        <!-- Dots Indicators -->
+        <div class="slider-dots" id="slider-dots">
+          <span class="dot active" data-index="0"></span>
+          <span class="dot" data-index="1"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories Grid Section -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Explore by Category</h2>
+        <p class="section-subtitle">Specially curated treasures from local Nepalese cooperatives</p>
+      </div>
+      <div class="category-grid">
+        <!-- Category Card 1 -->
+        <div class="category-card" onclick="document.querySelector('[data-category=\'Tea & Coffee\']').click(); document.getElementById('shop').scrollIntoView();">
+          <img src="https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80" alt="Premium Teas" class="category-img">
+          <div class="category-overlay">
+            <h3>Tea & Coffee</h3>
+            <p>Single-origin highlands harvest</p>
+          </div>
+        </div>
+        <!-- Category Card 2 -->
+        <div class="category-card" onclick="document.querySelector('[data-category=\'Gourmet\']').click(); document.getElementById('shop').scrollIntoView();">
+          <img src="https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=800&q=80" alt="Gourmet Spices" class="category-img">
+          <div class="category-overlay">
+            <h3>Gourmet Spices & Honey</h3>
+            <p>Wild organic mountain delicacies</p>
+          </div>
+        </div>
+        <!-- Category Card 3 -->
+        <div class="category-card" onclick="document.querySelector('[data-category=\'Artisanal\']').click(); document.getElementById('shop').scrollIntoView();">
+          <img src="https://images.unsplash.com/photo-1606744824163-985d376605aa?auto=format&fit=crop&w=800&q=80" alt="Artisanal Handcrafts" class="category-img">
+          <div class="category-overlay">
+            <h3>Artisanal Handcrafts</h3>
+            <p>Traditional brass & felt products</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Products Catalog Section -->
+    <section class="section" id="shop" style="border-top: 1px solid var(--border-color); padding-top: 80px;">
+      <div class="section-header">
+        <h2 class="section-title">The Himalayan Collection</h2>
+        <p class="section-subtitle">Pure ingredients, artisanal craftsmanship, sustainable sourcing</p>
+      </div>
+
+      <!-- Controls: Filters & Sorting -->
+      <div class="catalog-controls">
+        <div class="filter-tags" id="filter-tags">
+          <button class="filter-tag active" data-category="All">All Products</button>
+          <button class="filter-tag" data-category="Tea & Coffee">Tea & Coffee</button>
+          <button class="filter-tag" data-category="Gourmet">Gourmet & Spices</button>
+          <button class="filter-tag" data-category="Artisanal">Artisanal Crafts</button>
+        </div>
+        <div>
+          <select id="sort-select" class="sort-select" aria-label="Sort products">
+            <option value="featured">Sort by: Featured</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="rating">Customer Rating</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="products-grid" id="products-grid">
+        <!-- Products injected dynamically via app.js -->
+      </div>
+    </section>
+
+    <!-- Company Story Section -->
+    <section class="section" id="about" style="background-color: var(--white); border-radius: 16px; margin: 40px auto 80px; box-shadow: var(--shadow-sm); padding: 60px;">
+      <div style="display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center;">
+        <div style="text-align: center; max-width: 700px; margin: 0 auto;">
+          <span class="hero-tag" style="color: var(--primary-light);">Our Story</span>
+          <h2 class="section-title" style="margin-bottom: 24px;">Bridging Himalayan Communities to the World</h2>
+          <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 1.05rem;">
+            Hamro Products was founded with a simple vision: to bring the rich bio-diversity and exquisite artisanal creations of Nepal directly to global homes. We partner with smallholder cooperatives, female-led wool guilds, and mountain honey hunters to guarantee fair trade prices.
+          </p>
+          <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 1.05rem;">
+            By picking our products, you're directly supporting educational grants and eco-preservation schemes across rural Himalayan districts.
+          </p>
+          <a href="#shop" class="btn btn-primary">Support Our Mission</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Premium Value Proposition Cards -->
+    <section class="section features-section" id="features" style="padding: 60px 24px;">
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="ri-leaf-line"></i></div>
+          <h3>100% Organic & Raw</h3>
+          <p>Harvested using clean Himalayan glacier water, zero artificial fertilizers, and traditional processes.</p>
+        </div>
+        <!-- Feature 2 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="ri-hand-heart-line"></i></div>
+          <h3>Fair Trade Artisanship</h3>
+          <p>We work directly with community cooperatives ensuring women and small farm owners receive sustainable profits.</p>
+        </div>
+        <!-- Feature 3 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="ri-shield-check-line"></i></div>
+          <h3>Guaranteed Authenticity</h3>
+          <p>Each parcel features a traceable batch certificate verifying its origin and organic validation.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Sliding Shopping Cart Drawer -->
+  <div class="cart-overlay" id="cart-overlay"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">
+      <h2 class="cart-title"><i class="ri-shopping-bag-line"></i> Your Bag</h2>
+      <button class="close-btn" id="close-cart-btn" aria-label="Close cart drawer">&times;</button>
+    </div>
+    
+    <!-- Items Container -->
+    <div class="cart-items" id="cart-items">
+      <!-- Items dynamically injected here -->
+    </div>
+
+    <!-- Summary & Actions -->
+    <div class="cart-footer">
+      <div class="cart-summary-row">
+        <span>Subtotal</span>
+        <span id="cart-subtotal">$0.00</span>
+      </div>
+      <div class="cart-summary-row">
+        <span>Eco-Shipping</span>
+        <span style="color: var(--primary-light); font-weight: 500;">Calculated at checkout</span>
+      </div>
+      <div class="cart-summary-row total">
+        <span>Total</span>
+        <span id="cart-total">$0.00</span>
+      </div>
+      <button class="btn btn-primary btn-checkout" onclick="openCheckout()">Proceed to Checkout</button>
+    </div>
+  </div>
+
+  <!-- Product Details Overlay Modal -->
+  <div class="modal" id="product-modal">
+    <div class="modal-bg" onclick="closeProductDetail()"></div>
+    <div class="modal-wrapper" id="product-modal-content">
+      <!-- Content injected dynamically via app.js -->
+    </div>
+  </div>
+
+  <!-- Checkout Multi-Step Modal -->
+  <div class="modal" id="checkout-modal">
+    <div class="modal-bg" onclick="closeCheckout()"></div>
+    <div class="modal-wrapper checkout-modal-wrapper">
+      <div class="checkout-header">
+        <h2 class="brand-font" style="font-size: 1.5rem; color: var(--primary);">Secure Checkout</h2>
+        <button class="close-btn" onclick="closeCheckout()">&times;</button>
+      </div>
+
+      <!-- Checkout Step Indicators -->
+      <div class="checkout-steps">
+        <div class="step-indicator active">
+          <span class="step-num">1</span> Shipping Details
+        </div>
+        <div class="step-indicator">
+          <span class="step-num">2</span> Payment Info
+        </div>
+        <div class="step-indicator">
+          <span class="step-num">3</span> Complete
+        </div>
+      </div>
+
+      <!-- Checkout Form Body -->
+      <div class="checkout-body">
+        
+        <!-- Step 1 Shipping Content -->
+        <div class="checkout-step-content active" id="step-1-content">
+          <div class="form-group">
+            <label for="chk-name">Full Name</label>
+            <input type="text" id="chk-name" class="form-control" placeholder="E.g., John Doe" required>
+          </div>
+          <div class="form-group">
+            <label for="chk-email">Email Address</label>
+            <input type="email" id="chk-email" class="form-control" placeholder="E.g., john@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="chk-address">Shipping Address</label>
+            <input type="text" id="chk-address" class="form-control" placeholder="Street Address, Apt, Suite" required>
+          </div>
+          <div class="form-group-row">
+            <div class="form-group">
+              <label for="chk-city">City</label>
+              <input type="text" id="chk-city" class="form-control" placeholder="E.g., San Francisco" required>
+            </div>
+            <div class="form-group">
+              <label for="chk-zip">ZIP / Postal Code</label>
+              <input type="text" id="chk-zip" class="form-control" placeholder="E.g., 94103" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 Payment Content -->
+        <div class="checkout-step-content" id="step-2-content">
+          <div class="form-group-row">
+            <div class="form-group">
+              <label for="chk-discount">Discount Code</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="chk-discount" class="form-control" placeholder="E.g. WIN10">
+                <button type="button" class="btn btn-primary" onclick="applyDiscount()">Apply</button>
+              </div>
+            </div>
+          </div>
+          <div class="cart-summary-row discount-row" style="display: none; margin-bottom: 16px;">
+            <span>Discount Applied</span>
+            <span id="discount-amount" style="color: #28a745;">-$0.00</span>
+          </div>
+
+          <div class="form-group">
+            <label for="chk-card">Card Number</label>
+            <input type="text" id="chk-card" class="form-control" placeholder="1234 5678 9101 1121" required>
+          </div>
+          <div class="form-group-row">
+            <div class="form-group">
+              <label for="chk-expiry">Expiry Date</label>
+              <input type="text" id="chk-expiry" class="form-control" placeholder="MM / YY" required>
+            </div>
+            <div class="form-group">
+              <label for="chk-cvv">CVV</label>
+              <input type="password" id="chk-cvv" class="form-control" placeholder="123" maxlength="4" required>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 10px;">
+            <i class="ri-lock-line" style="color: var(--primary-light);"></i> End-to-end encrypted connection.
+          </p>
+        </div>
+
+        <!-- Step 3 Success Content -->
+        <div class="checkout-step-content" id="step-3-content">
+          <div class="success-screen">
+            <div class="success-icon-container">
+              <i class="ri-checkbox-circle-fill" style="font-size: 3rem;"></i>
+            </div>
+            <h3>Dhanyabad! (Thank You)</h3>
+            <p>Your order has been placed successfully. A tracking link has been dispatched to your email.</p>
+            <button class="btn btn-primary" onclick="closeCheckout()">Continue Shopping</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Checkout Form Footer Buttons -->
+      <div class="checkout-footer">
+        <button class="btn btn-outline" id="checkout-prev-btn" onclick="handleCheckoutPrev()">Back</button>
+        <button class="btn btn-primary" id="checkout-next-btn" onclick="handleCheckoutNext()">Continue to Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Footer -->
+  <footer>
+    <div class="footer-container">
+      <div class="footer-brand">
+        <h3 class="brand-font">Hamro Products</h3>
+        <p>Connecting global homes with authentic, premium Himalayan goods, empowering agricultural and weaving cooperatives in Nepal.</p>
+        <div style="display: flex; gap: 12px; font-size: 1.25rem;">
+          <a href="#" style="color: white; opacity: 0.7;"><i class="ri-instagram-line"></i></a>
+          <a href="#" style="color: white; opacity: 0.7;"><i class="ri-facebook-box-line"></i></a>
+          <a href="#" style="color: white; opacity: 0.7;"><i class="ri-twitter-line"></i></a>
+        </div>
+      </div>
+      
+      <div class="footer-column">
+        <h4>Explore</h4>
+        <ul class="footer-links">
+          <li><a href="#shop">Himalayan Tea & Coffee</a></li>
+          <li><a href="#shop">Gourmet Spices & Honey</a></li>
+          <li><a href="#shop">Artisanal Wool & Brass</a></li>
+          <li><a href="#about">Our Story</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4>Help & Support</h4>
+        <ul class="footer-links">
+          <li><a href="#">Track Order</a></li>
+          <li><a href="#">Return Policy</a></li>
+          <li><a href="#">Shipping FAQ</a></li>
+          <li><a href="#">Contact Us</a></li>
+          <li><a href="admin.html" style="color: var(--accent); font-weight: 700;"><i class="ri-settings-4-line"></i> Admin Portal</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4>Himalayan Dispatch</h4>
+        <p style="opacity: 0.7; font-size: 0.9rem; margin-bottom: 16px;">Subscribe to receive stories from our tea cooperatives and seasonal recipe updates.</p>
+        <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Subscribed successfully!'); this.reset();">
+          <input type="email" placeholder="Your Email" class="newsletter-input" required aria-label="Email Address">
+          <button type="submit" class="btn btn-accent" style="padding: 10px 20px;" aria-label="Subscribe">Join</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 Hamro Products Company. All rights reserved.</p>
+      <div style="display: flex; gap: 20px;">
+        <a href="#" style="color: white; text-decoration: none;">Privacy Policy</a>
+        <a href="#" style="color: white; text-decoration: none;">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating Action Button for Spin the Wheel -->
+  <button id="spin-wheel-fab" class="fab-btn" onclick="openWheelModal()" aria-label="Spin the wheel for discounts">
+    <i class="ri-gift-line"></i>
+  </button>
+
+  <!-- Spin the Wheel Modal -->
+  <div class="modal" id="wheel-modal">
+    <div class="modal-bg" onclick="closeWheelModal()"></div>
+    <div class="modal-wrapper wheel-modal-wrapper">
+      <button class="close-btn" onclick="closeWheelModal()">&times;</button>
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 class="brand-font" style="color: var(--primary);">Spin & Win!</h2>
+        <p style="color: var(--text-muted);">Try your luck to get a discount on your order.</p>
+      </div>
+      
+      <div class="wheel-container">
+        <div class="wheel-pointer"><i class="ri-map-pin-fill"></i></div>
+        <div class="wheel" id="spin-wheel">
+          <!-- Wheel Segments generated by CSS -->
+          <div class="wheel-segment" style="--i:1; --bg:#e61c24;"><span>5% OFF</span></div>
+          <div class="wheel-segment" style="--i:2; --bg:#ff9800;"><span>FREE SHIP</span></div>
+          <div class="wheel-segment" style="--i:3; --bg:#2196f3;"><span>10% OFF</span></div>
+          <div class="wheel-segment" style="--i:4; --bg:#4caf50;"><span>NEXT TIME</span></div>
+          <div class="wheel-segment" style="--i:5; --bg:#9c27b0;"><span>15% OFF</span></div>
+          <div class="wheel-segment" style="--i:6; --bg:#e91e63;"><span>20% OFF</span></div>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin-top: 30px;">
+        <button class="btn btn-primary btn-spin" id="spin-btn" onclick="spinWheel()">Spin Now</button>
+      </div>
+      
+      <!-- Winning Result Overlay -->
+      <div class="wheel-result" id="wheel-result" style="display: none;">
+        <h3 id="win-message">You Won 10% OFF!</h3>
+        <p>Use this code at checkout:</p>
+        <div class="discount-code-box" id="discount-code-box">WIN10</div>
+        <button class="btn btn-outline" style="margin-top: 15px;" onclick="closeWheelModal()">Awesome!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal (Login / Register) -->
+  <div class="modal" id="auth-modal">
+    <div class="modal-bg" onclick="closeAuthModal()"></div>
+    <div class="modal-wrapper" style="max-width: 400px; padding: 40px; text-align: center;">
+      <button class="close-btn modal-close-btn" onclick="closeAuthModal()">&times;</button>
+      <h2 class="brand-font" id="auth-title" style="color: var(--primary); margin-bottom: 20px;">Welcome Back</h2>
+      
+      <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+        <div class="form-group" id="auth-name-group" style="display: none; text-align: left;">
+          <label for="auth-name">Full Name</label>
+          <input type="text" id="auth-name" class="form-control" placeholder="Jane Doe">
+        </div>
+        <div class="form-group" style="text-align: left;">
+          <label for="auth-email">Email Address</label>
+          <input type="email" id="auth-email" class="form-control" required placeholder="name@example.com">
+        </div>
+        <div class="form-group" style="text-align: left;">
+          <label for="auth-password">Password</label>
+          <input type="password" id="auth-password" class="form-control" required placeholder="********">
+        </div>
+        <button type="submit" class="btn btn-primary" id="auth-submit-btn" style="width: 100%; margin-top: 10px;">Login</button>
+      </form>
+
+      <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">
+        <span id="auth-toggle-text">Don't have an account?</span> 
+        <a href="#" onclick="toggleAuthMode()" id="auth-toggle-link" style="color: var(--accent); font-weight: bold; text-decoration: none;">Register</a>
+      </p>
+      
+      <div id="auth-logged-in-view" style="display: none;">
+        <h3 id="auth-welcome-msg" style="margin-bottom: 20px;">Hi, User!</h3>
+        <button class="btn btn-outline" onclick="handleLogout()" style="width: 100%;">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic JavaScript -->
+  <script src="app.js"></script>
+</body>
+</html>
