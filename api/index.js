@@ -18,7 +18,7 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, '../')));
 
 async function createTablesAndSeed() {
   try {
@@ -343,7 +343,7 @@ app.get('/api/orders', authenticateToken, isAdmin, async (req, res) => {
 });
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, '../index.html'));
 });
 
 // Vercel Serverless Export or Local Listen

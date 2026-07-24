@@ -4,7 +4,7 @@
   "description": "Authentic Himalayan E-Commerce Web Server",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node api/index.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
